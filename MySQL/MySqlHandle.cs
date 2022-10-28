@@ -18,13 +18,13 @@ namespace MySQL {
             ip= tempIp;
             database = tempDatabase;
             password = tempPassword;
-            connectionString = @"Data Source="+ip+";Initial Catalog="+database+"; User ID="+user+"; Password="+password;
+            connectionString = @"Data Source="+ip+";Initial Catalog="+database+"; User ID="+user+"; Password="+password+ ";Convert Zero Datetime=True;Allow Zero Datetime=True";
             Console.WriteLine("Setup closed...");
         }
 
         public static MySqlDataReader execute(string SqlCommand) {
             try {
-                connectionString = @"Data Source=" + ip + ";Initial Catalog=" + database + "; User ID=" + user + "; Password=" + password;
+                connectionString = @"Data Source=" + ip + ";Initial Catalog=" + database + "; User ID=" + user + "; Password=" + password+ ";Convert Zero Datetime=True;Allow Zero Datetime=True";
                 MySqlConnection connection = new MySqlConnection(connectionString);
                 connection.Open();
                 MySqlCommand command = new MySqlCommand(SqlCommand, connection);
@@ -39,7 +39,7 @@ namespace MySQL {
 
         public static void executeDirectly(string SqlCommand) {
             try {
-                connectionString = @"Data Source=" + ip + ";Initial Catalog=" + database + "; User ID=" + user + "; Password=" + password;
+                connectionString = @"Data Source=" + ip + ";Initial Catalog=" + database + "; User ID=" + user + "; Password=" + password + ";Convert Zero Datetime=True;Allow Zero Datetime=True";
                 MySqlConnection connection = new MySqlConnection(connectionString);
                 connection.Open();
                 MySqlCommand command = new MySqlCommand(SqlCommand, connection);
