@@ -1,17 +1,10 @@
-﻿using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Asn1.Crmf;
-using Org.BouncyCastle.Utilities;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using Google.Protobuf.WellKnownTypes;
+using MySql.Data.MySqlClient;
 using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Transactions;
 
 namespace MySQL {
     public class Programm {
@@ -21,11 +14,35 @@ namespace MySQL {
             Console.WriteLine("  __  __           ____            _            ____   _   _                  _   \r\n |  \\/  |  _   _  / ___|    __ _  | |          / ___| | | (_)   ___   _ __   | |_ \r\n | |\\/| | | | | | \\___ \\   / _` | | |  _____  | |     | | | |  / _ \\ | '_ \\  | __|\r\n | |  | | | |_| |  ___) | | (_| | | | |_____| | |___  | | | | |  __/ | | | | | |_ \r\n |_|  |_|  \\__, | |____/   \\__, | |_|          \\____| |_| |_|  \\___| |_| |_|  \\__|\r\n           |___/              |_|                                                 ");
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("----------------------------------------------------[SETUP]-------------------------------------------------------");
-            string user, password, ip, database;
+            string user, password = String.Empty, ip, database;
             Console.WriteLine("Enter the User:");
             user = Console.ReadLine();
             Console.WriteLine("Enter the password:");
-            password = Console.ReadLine();
+            ConsoleKeyInfo key;
+            var pwd = new SecureString();
+            while (true) {
+                ConsoleKeyInfo i = Console.ReadKey(true);
+                if (i.Key == ConsoleKey.Enter) {
+                    break;
+                } else if (i.Key == ConsoleKey.Backspace) {
+                    if (pwd.Length > 0) {
+                        pwd.RemoveAt(pwd.Length - 1);
+                        Console.Write("\b \b");
+                    }
+                } else if (i.KeyChar != '\u0000') // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
+                  {
+                    pwd.AppendChar(i.KeyChar);
+                    Console.Write("*");
+                }
+            }
+            Console.WriteLine();
+            IntPtr valuePtr = IntPtr.Zero;
+            try {
+                valuePtr = Marshal.SecureStringToGlobalAllocUnicode(pwd);
+                password = Marshal.PtrToStringUni(valuePtr);
+            } finally {
+                Marshal.ZeroFreeGlobalAllocUnicode(valuePtr);
+            }
             Console.WriteLine("Enter the Server ip-address:");
             ip = Console.ReadLine();
             Console.WriteLine("Enter the database:");
@@ -36,7 +53,7 @@ namespace MySQL {
 
             Console.WriteLine("use 'help' to show commands...");
             while (true) {
-                Console.Write(MySqlHandle.ip+"/MySql/" + MySqlHandle.database + ">");
+                Console.Write(MySqlHandle.ip + "/MySql/" + MySqlHandle.database + ">");
                 string[] command = Console.ReadLine().Split(' ');
                 if (command[0] == "help") {
                     Console.WriteLine("\n");
@@ -150,17 +167,22 @@ namespace MySQL {
 
 
                 } else if (command[0] == "switchip") {
-                    if (command[1] != null && command[1] != "") {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("Ip successfully changed...  (" + MySqlHandle.ip + " => " + command[1] + ")");
-                        Console.ForegroundColor = ConsoleColor.White;
-                        MySqlHandle.ip = command[1];
+                    if (command.Length > 1) {
+                        if (command[1] != null && command[1] != "") {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine("Ip successfully changed...  (" + MySqlHandle.ip + " => " + command[1] + ")");
+                            Console.ForegroundColor = ConsoleColor.White;
+                            MySqlHandle.ip = command[1];
+                        } else {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("This command is not right. switchip <ip>");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
                     } else {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("This command is not right. switchip <ip>");
+                        Console.WriteLine("The command '" + command[0] + "' is not right. Please Check spelling and try again.");
                         Console.ForegroundColor = ConsoleColor.White;
                     }
-
 
                 } else if (command[0] == "switchdb") {
                     try {
