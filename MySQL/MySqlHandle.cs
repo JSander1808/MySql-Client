@@ -18,7 +18,11 @@ namespace MySQL {
             ip= tempIp;
             database = tempDatabase;
             password = tempPassword;
-            connectionString = @"Data Source="+ip+";Initial Catalog="+database+"; User ID="+user+"; Password="+password;
+            if (database == null || database == "") {
+                connectionString = "Server=" + ip + ";User Id=" + user + ";Password=" + password + ";";
+            } else {
+                connectionString = "Server=" + ip + "Database="+database+";;User Id=" + user + ";Password=" + password + ";";
+            }
             Console.WriteLine("Setup closed...");
         }
 
