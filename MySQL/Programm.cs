@@ -15,42 +15,86 @@ namespace MySQL {
             Console.WriteLine("  __  __           ____            _            ____   _   _                  _   \r\n |  \\/  |  _   _  / ___|    __ _  | |          / ___| | | (_)   ___   _ __   | |_ \r\n | |\\/| | | | | | \\___ \\   / _` | | |  _____  | |     | | | |  / _ \\ | '_ \\  | __|\r\n | |  | | | |_| |  ___) | | (_| | | | |_____| | |___  | | | | |  __/ | | | | | |_ \r\n |_|  |_|  \\__, | |____/   \\__, | |_|          \\____| |_| |_|  \\___| |_| |_|  \\__|\r\n           |___/              |_|                                                 ");
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("----------------------------------------------------[SETUP]-------------------------------------------------------");
-            string user, password = String.Empty, ip, database;
-            Console.Write("Enter the User (required):");
-            user = Console.ReadLine();
-            Console.Write("Enter the password (required):");
-            ConsoleKeyInfo key;
-            var pwd = new SecureString();
-            while (true) {
-                ConsoleKeyInfo i = Console.ReadKey(true);
-                if (i.Key == ConsoleKey.Enter) {
-                    break;
-                } else if (i.Key == ConsoleKey.Backspace) {
-                    if (pwd.Length > 0) {
-                        pwd.RemoveAt(pwd.Length - 1);
-                        Console.Write("\b \b");
+            string user = string.Empty, password = string.Empty, ip=string.Empty, database = string.Empty;
+            LoginManager loginManager = new LoginManager();
+            loginManager.init(Directory.GetCurrentDirectory()+"\\MySql\\Login\\data.conf");
+            string loginMode = "self";
+            if (loginManager.get("user") != "" && loginManager.get("ip") != "") {
+                Console.WriteLine("Will you load the saved login data. [Y/n]");
+                string readmode = Console.ReadLine();
+                if (readmode == "y" || readmode == "Y" || readmode == "") loginMode = "auto";
+            }
+            if (loginMode == "self") {
+                Console.Write("Enter the User (required):");
+                user = Console.ReadLine();
+                Console.Write("Enter the password (required):");
+                ConsoleKeyInfo key;
+                var pwd = new SecureString();
+                while (true) {
+                    ConsoleKeyInfo i = Console.ReadKey(true);
+                    if (i.Key == ConsoleKey.Enter) {
+                        break;
+                    } else if (i.Key == ConsoleKey.Backspace) {
+                        if (pwd.Length > 0) {
+                            pwd.RemoveAt(pwd.Length - 1);
+                            Console.Write("\b \b");
+                        }
+                    } else if (i.KeyChar != '\u0000') // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
+                      {
+                        pwd.AppendChar(i.KeyChar);
+                        Console.Write("*");
                     }
-                } else if (i.KeyChar != '\u0000') // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
-                  {
-                    pwd.AppendChar(i.KeyChar);
-                    Console.Write("*");
+                }
+                Console.WriteLine();
+                IntPtr valuePtr = IntPtr.Zero;
+                try {
+                    valuePtr = Marshal.SecureStringToGlobalAllocUnicode(pwd);
+                    password = Marshal.PtrToStringUni(valuePtr);
+                } finally {
+                    Marshal.ZeroFreeGlobalAllocUnicode(valuePtr);
+                }
+                Console.Write("Enter the Server ip-address (required):");
+                ip = Console.ReadLine();
+                Console.Write("Enter the database (optional):");
+                database = Console.ReadLine();
+
+                loginManager.set("ip", ip);
+                loginManager.set("user",user);
+                loginManager.set("database",database);
+            } else if(loginMode=="auto"){
+                ip = loginManager.get("ip");
+                user = loginManager.get("user");
+                database = loginManager.get("database");
+                Console.Write("Enter the password (required):");
+                ConsoleKeyInfo key;
+                var pwd = new SecureString();
+                while (true) {
+                    ConsoleKeyInfo i = Console.ReadKey(true);
+                    if (i.Key == ConsoleKey.Enter) {
+                        break;
+                    } else if (i.Key == ConsoleKey.Backspace) {
+                        if (pwd.Length > 0) {
+                            pwd.RemoveAt(pwd.Length - 1);
+                            Console.Write("\b \b");
+                        }
+                    } else if (i.KeyChar != '\u0000') // KeyChar == '\u0000' if the key pressed does not correspond to a printable character, e.g. F1, Pause-Break, etc
+                      {
+                        pwd.AppendChar(i.KeyChar);
+                        Console.Write("*");
+                    }
+                }
+                Console.WriteLine();
+                IntPtr valuePtr = IntPtr.Zero;
+                try {
+                    valuePtr = Marshal.SecureStringToGlobalAllocUnicode(pwd);
+                    password = Marshal.PtrToStringUni(valuePtr);
+                } finally {
+                    Marshal.ZeroFreeGlobalAllocUnicode(valuePtr);
                 }
             }
-            Console.WriteLine();
-            IntPtr valuePtr = IntPtr.Zero;
-            try {
-                valuePtr = Marshal.SecureStringToGlobalAllocUnicode(pwd);
-                password = Marshal.PtrToStringUni(valuePtr);
-            } finally {
-                Marshal.ZeroFreeGlobalAllocUnicode(valuePtr);
-            }
-            Console.Write("Enter the Server ip-address (required):");
-            ip = Console.ReadLine();
-            Console.Write("Enter the database (optional):");
-            database = Console.ReadLine();
             MySqlHandle mySql = new MySqlHandle(ip, database, user, password);
             Console.WriteLine("----------------------------------------------------[End-SETUP]---------------------------------------------------");
-            Console.WriteLine("\n\n\n\n");
+            Console.WriteLine("\n");
 
             aliasManager.init(Directory.GetCurrentDirectory() + "\\MySql\\alias\\data.conf");
             Console.WriteLine("use 'help' to show commands...");
@@ -350,7 +394,7 @@ namespace MySQL {
                     MySqlHandle.executeDirectly("CREATE DATABASE " + databaseNameFinal);
                     Console.WriteLine("Will you change into the new DataBase? [Y/n]");
                     string temp = Console.ReadLine();
-                    if (temp == "y" || temp == "Y") {
+                    if (temp == "y" || temp == "Y" ||temp=="") {
                         MySqlHandle.database = databaseNameFinal;
                     }
                     Console.ForegroundColor = ConsoleColor.Green;
